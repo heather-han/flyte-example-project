@@ -1,12 +1,12 @@
 """Example from https://docs.flyte.org/projects/cookbook/en/latest/index.html"""
 
 
+# Third party
+from flytekit import task, workflow
+import flytekit.extras.sklearn  # noqa: F401
 import pandas as pd
 from sklearn.datasets import load_wine
 from sklearn.linear_model import LogisticRegression
-
-import flytekit.extras.sklearn
-from flytekit import task, workflow
 
 
 @task
@@ -14,17 +14,24 @@ def get_data() -> pd.DataFrame:
     """Get the wine dataset."""
     return load_wine(as_frame=True).frame
 
+
 @task
 def process_data(data: pd.DataFrame) -> pd.DataFrame:
     """Simplify the task from a 3-class to a binary classification problem."""
     return data.assign(target=lambda x: x["target"].where(x["target"] == 0, 1))
 
+
 @task
-def train_model(data: pd.DataFrame, hyperparameters: dict) -> LogisticRegression:
+def train_model(
+    data: pd.DataFrame, hyperparameters: dict
+) -> LogisticRegression:
     """Train a model on the wine dataset."""
     features = data.drop("target", axis="columns")
     target = data["target"]
-    return LogisticRegression(max_iter=3000, **hyperparameters).fit(features, target)
+    return LogisticRegression(max_iter=1000, **hyperparameters).fit(
+        features, target
+    )
+
 
 @workflow
 def training_workflow(hyperparameters: dict) -> LogisticRegression:
